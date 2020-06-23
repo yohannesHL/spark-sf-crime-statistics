@@ -1,5 +1,11 @@
 from kafka import KafkaProducer
-import json, time, io
+from json import load, dumps
+import time
+import io
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 class ProducerServer(KafkaProducer):
 
@@ -9,19 +15,19 @@ class ProducerServer(KafkaProducer):
         self.topic = topic
 
     def dict_to_binary(self, json_dict):
-        buffer = io.BytesIO(json_dict)
-        
-        return buffer.getvalue()
-
+        return dumps(json_dict).encode('utf-8')
+    
     def generate_data(self):
+        logger.debug('Generating data for topic: %s', self.topic)
 
-        with open(self.input_file, 'rb') as file:
-            data = json.load(file)
+        with open(self.input_file) as file:
+            for record in load(file):
+                message = self.dict_to_binary(record)
 
-            for json_dict in data:
-                message = self.dict_to_binary(json_dict)
+                logger.debug('sending message: %s', message)
 
                 self.send(self.topic, message)
+                time.sleep(0.01)
                 
-                time.sleep(1)
+
             
