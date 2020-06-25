@@ -15,11 +15,11 @@ case "$1" in
     spark)
         spark-submit --packages org.apache.spark:spark-streaming-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5 data_stream.py
     ;;
-    producer)
-        python kafka_server.py $CRIME_FILE_PATH
+    producer*)
+        python producer_server.py $CRIME_FILE_PATH
     ;;
-    consumer)
-        python kafka_consumer.py $RADIO_FILE_PATH
+    consumer*)
+        python consumer_server.py $RADIO_FILE_PATH
     ;;
     install)
         if [ ! -d "data" ]; then

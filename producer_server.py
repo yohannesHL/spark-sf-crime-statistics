@@ -1,11 +1,16 @@
-from kafka import KafkaProducer
-from json import load, dumps
+import sys
+import os
 import time
-import io
 import logging
+from pathlib import Path
+from json import load, dumps
+from kafka import KafkaProducer
 
 logger = logging.getLogger('KafkaProducerServer')
 logger.setLevel(logging.DEBUG)
+
+KAFKA_BROKER_URL= os.getenv('KAFKA_BROKER_URL')
+KAFKA_TOPIC_NAME = os.getenv('KAFKA_TOPIC_NAME')
 
 class KafkaProducerServer():
     '''Reads data from an input json file and push to kafka topic as a stream
@@ -43,3 +48,28 @@ class KafkaProducerServer():
 
                 time.sleep(0.05)
     
+def run_kafka_stream_source(filepath):
+    
+    producer = KafkaProducerServer(
+        filepath,
+        KAFKA_TOPIC_NAME,
+        bootstrap_servers=KAFKA_BROKER_URL,
+        client_id='producer-app-1'
+    )
+
+    producer.generate_data()
+
+
+if __name__ == '__main__':
+    logging.basicConfig()
+    logger.setLevel(logging.DEBUG)
+
+    if len(sys.argv) < 2:
+        raise AssertionError(f'Please provide a path to the json file. \n\t\tUsage: {sys.argv[0]} <filename>')
+    
+    filepath = os.path.join( Path(__file__).parent, sys.argv[1])
+    
+    logger.debug(f'Using json source file: {filepath}')
+    logger.debug('Starting KafkaProducerServer...')
+
+    run_kafka_stream_source(filepath)
