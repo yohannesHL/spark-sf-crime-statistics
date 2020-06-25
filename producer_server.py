@@ -4,30 +4,42 @@ import time
 import io
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('KafkaProducerServer')
 logger.setLevel(logging.DEBUG)
 
-class ProducerServer(KafkaProducer):
-
-    def __init__(self, input_file, topic, **kwargs):
-        super().__init__(**kwargs)
+class KafkaProducerServer():
+    '''Reads data from an input json file and push to kafka topic as a stream
+    Used as an event source for downstream applications
+    
+    Arguments:
+        input_file {string} -- file path (absolute) to json source file.
+        topic {string} -- Topic name to send kafka event to
+        **kwargs -- Additional keyword arguments passed to KafkaProducer
+    '''  
+   
+    def __init__(self, input_file, topic, **kwargs):   
+   
         self.input_file = input_file
         self.topic = topic
+        self.producer = KafkaProducer(
+            key_serializer = str.encode,
+            value_serializer = self.serialize_json,
+            **kwargs)
 
-    def dict_to_binary(self, json_dict):
+    def serialize_json(self, json_dict):
         return dumps(json_dict).encode('utf-8')
     
     def generate_data(self):
-        logger.debug('Generating data for topic: %s', self.topic)
+        logger.debug(f'Generating data for topic: {self.topic}')
 
-        with open(self.input_file) as file:
-            for record in load(file):
-                message = self.dict_to_binary(record)
+        with open(self.input_file) as json_file:
+            for record in load(json_file):
+                logger.debug(f'sent: {record}')
 
-                logger.debug('sending message: %s', message)
+                self.producer.send(
+                    self.topic, 
+                    key=record.get('crime_id'), 
+                    value=record)
 
-                self.send(self.topic, message)
-                time.sleep(0.01)
-                
-
-            
+                time.sleep(0.05)
+    
