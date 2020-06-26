@@ -13,13 +13,13 @@ RADIO_FILE_PATH="data/radio_code.json"
 
 case "$1" in
     spark)
-        spark-submit --packages org.apache.spark:spark-streaming-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5 data_stream.py
+        spark-submit --packages org.apache.spark:spark-streaming-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5 data_stream.py $RADIO_FILE_PATH
     ;;
     producer*)
         python producer_server.py $CRIME_FILE_PATH
     ;;
     consumer*)
-        python consumer_server.py $RADIO_FILE_PATH
+        python consumer_server.py 
     ;;
     install)
         if [ ! -d "data" ]; then
