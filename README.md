@@ -1,24 +1,25 @@
 
-#  SF Crime Statistics with Apache Spark
+#  Structured Streaming Pipeline with Apache Spark and Apache Kafka
 
-Here we demonstrate using Apache Spark to create a simple streaming ETL pipeline. Using sample data obtained from San Francisco crime reports.
-Our setup uses Apache Spark with Apache Kafka to Extract, Load and Transform (ETL) the dataset and do some processing. 
+Here we use Apache Spark with Apache Kafka to create a structured streaming pipeline for processing data from kafka events. 
 
 ### Process
-1. First we extract the data from a raw JSON file. This could have easily been retrieved from an API but we have chosen to keep it simple.
-2. Then we push and persist data to the kafka server.
-3. Finally we run a spark job which:
-    * pulls the data from the Kafka stream
-    * load the data 
-    * run some computations/transformations on the dataset (RDDs)
-    * join data with another static dataset (json) 
-    * output results to the console 
+1. Kafka Producer: Extracts the data from a raw JSON file and pushes the data to a Kafka server.
+2. Spark Task: 
+    * Pulls the data from the Kafka stream
+    * Loads and transforms the data
+    * runs some computations on the dataset
+    * join data with another static dataset read from another JSON file 
+    * outputs the statistics and results
 
 ## Screenshots
-Spark UI|Spark Executor Log| KafkaProducer Log
--|-|-
-![SparkUI](images/SparkUI.png)|![SparkUI](images/SparkExecutorLogs.png)|![SparkUI](images/KafkaProducerLogs.png)
+Spark UI|
+-|
+![SparkUI](images/SparkUI.png)|
 
+KafkaProducer Log|
+-|
+![SparkUI](images/KafkaProducerLogs.png)|
 
 
 ## Requirements
@@ -26,25 +27,36 @@ Spark UI|Spark Executor Log| KafkaProducer Log
 
 ## Installation/Running locally
 1. Run `docker-compose up` to bring up the containers. 
-2. Install dependancies and unpack data: `./start.sh install`
-3. Run kafka data source to simulate events: `./start.sh producer`
-4. (optional) Run kafka data sink to consume events (for testing): `./start.sh producer`
-5. Run spark task: `./start.sh spark`
+1. Enter `notebook` container which has spark installed: `docker-compose exec notebook bash`
+1. Change working directory: `cd work`
+1. Install dependancies and unpack data: `./start.sh install`
+1. Run kafka data source to simulate events: `./start.sh producer`
+1. (optional) Run kafka data sink to consume events (for testing): `./start.sh producer`
+1. Run spark task: `./start.sh spark`
+
+
+## Performance Optimisation
+
+There are a number of configuration values that can be tuned to achieve a optimal and efficient spark stream processing.
+
+Using a **trigger** with a `processingTime` that is too low can reduce throughput and increase latency. A trigger causes expensive (IO Read/Write) shuffle operations across the cluster.
+This can be seen by testing out different values for `processingTime`. For example, `processingTime='1 second'` causes too much reshuffling and reduces **processedRowsPerSecond**. Changing from `1` to `2` seconds increased **processedRowsPerSecond** (from ~600 to ~1000)
+
+Tracking **inputRowsPerSecond** vs **processedRowsPerSecond** helps in identifying which SparkSession configuration pairs were most efficient.   
+
+A higher **processedRowsPerSecond** indicates a higher throughput and lower latency. Higher **inputRowsPerSecond** suggests a lower latency.
+
+Streaming Progress Report|
+-|
+![SparkUI](images/SparkProgressReport.png)|
 
 
 
-
-By adjusting spark session property parameters its possible to optimise the latency and through put of the spark jobs.
-I found that adjusting the trigger window to above 30 seconds achives the highest throughput for this aggregation
+We tried adjusting SparkSession property parameters to see which values we can tune to optimize the latency and throughput of spark tasks. 
 
 
-How did changing values on the SparkSession property parameters affect the throughput and latency of the data?
-increasing available cpu and memory 
-latency isn't affect
-What were the 2-3 most efficient SparkSession property key/value pairs? Through testing multiple variations on values, how can you tell these were the most optimal?
+The SparkSession property key/value pairs that had most effect on increasing throughput while minimizing latency where:
+* trigger `processingTime` - Setting a higher value achieved higher throughput in our example. Don't set too low.
+* `spark.default.parallelism=2` - Number of tasks that can run in parallel per core 
+* `spark.sql.shuffle.partitions=4` - Number of partitions to use on aggregates and join RDD
 
-Highest throuput anc be achived by simulatanuously increasing executor.memory allocation and setting trigger to once=True to wait 
-This will give a snapshot of all the data up upto now.
-This may not be feasibly if the data is continuously eveolving.
-
-For long running spark jobs with endless stream of data it makes sence to have a value Instead it
