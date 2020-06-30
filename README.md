@@ -37,7 +37,7 @@ KafkaProducer Log|
 
 ## Performance Optimisation
 
-There are a number of configuration values that can be tuned to achieve a optimal and efficient spark stream processing.
+There are a number of configuration values that can be tuned to achieve optimal and efficient spark stream processing.
 
 Using a **trigger** with a `processingTime` that is too low can reduce throughput and increase latency. A trigger causes expensive (IO Read/Write) shuffle operations across the cluster.
 This can be seen by testing out different values for `processingTime`. For example, `processingTime='1 second'` causes too much reshuffling and reduces **processedRowsPerSecond**. Changing from `1` to `2` seconds increased **processedRowsPerSecond** (from ~600 to ~1000)
