@@ -58,5 +58,5 @@ We tried adjusting SparkSession property parameters to see which values we can t
 The SparkSession property key/value pairs that had most effect on increasing throughput while minimizing latency where:
 * trigger `processingTime` - Setting a higher value achieved higher throughput in our example. Don't set too low.
 * `spark.default.parallelism=2` - Number of tasks that can run in parallel per core 
-* `spark.sql.shuffle.partitions=4` - Number of partitions to use on aggregates and join RDD
+* `spark.sql.shuffle.partitions=4` - Number of partitions to use on aggregates and join RDDs
 
